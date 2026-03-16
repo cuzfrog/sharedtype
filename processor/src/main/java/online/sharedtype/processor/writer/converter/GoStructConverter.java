@@ -29,7 +29,20 @@ final class GoStructConverter extends AbstractStructConverter {
         ClassDef classDef = (ClassDef) typeDef;
         StructExpr value = new StructExpr(
             classDef.simpleName(),
-            classDef.typeVariables().stream().map(typeInfo -> typeExpressionConverter.toTypeExpr(typeInfo, typeDef)).collect(Collectors.toList()),
+            classDef.typeVariables().stream().map(typeVar -> {
+                String name = typeVar.name();
+                if (typeVar.bounds().isEmpty()) {
+                    return name + " any";
+                }
+                String bounds = typeVar.bounds().stream()
+                    .map(b -> typeExpressionConverter.toTypeExpr(b, typeDef))
+                    .collect(Collectors.joining("; "));
+
+                if (typeVar.bounds().size() > 1) {
+                    return name + " interface{ " + bounds + " }";
+                }
+                return name + " " + bounds;
+            }).collect(Collectors.toList()),
             classDef.directSupertypes().stream().map(typeInfo1 -> typeExpressionConverter.toTypeExpr(typeInfo1, typeDef)).collect(Collectors.toList()),
             gatherProperties(classDef)
         );
@@ -64,7 +77,7 @@ final class GoStructConverter extends AbstractStructConverter {
             if (typeParameters.isEmpty()) {
                 return null;
             }
-            return String.format("[%s any]", String.join(", ", typeParameters));
+            return String.format("[%s]", String.join(", ", typeParameters));
         }
     }
 

@@ -181,4 +181,33 @@ final class TypescriptInterfaceConverterIntegrationTest {
         assertThat(prop1.unionUndefined).isTrue();
         assertThat(prop1.readonly).isFalse();
     }
+
+    @Test
+    void writeInterfaceWithBounds() {
+        ClassDef classDef = ClassDef.builder()
+            .qualifiedName("com.github.cuzfrog.ClassA")
+            .simpleName("ClassA")
+            .typeVariables(Collections.singletonList(
+                TypeVariableInfo.builder()
+                    .name("T")
+                    .bounds(Collections.singletonList(
+                        ConcreteTypeInfo.builder()
+                            .qualifiedName("com.github.cuzfrog.Shape")
+                            .simpleName("Shape")
+                            .build()
+                    ))
+                    .build()
+            ))
+            .components(Collections.emptyList())
+            .build();
+
+        when(ctxMocks.getContext().getTypeStore().getConfig(classDef)).thenReturn(config);
+        when(config.getTypescriptFieldReadonly()).thenReturn(Props.Typescript.FieldReadonlyType.NONE);
+
+        var tuple = converter.convert(classDef);
+        assertThat(tuple).isNotNull();
+        TypescriptInterfaceConverter.InterfaceExpr model = (TypescriptInterfaceConverter.InterfaceExpr) tuple.b();
+        assertThat(model.name).isEqualTo("ClassA");
+        assertThat(model.typeParameters).containsExactly("T extends Shape");
+    }
 }

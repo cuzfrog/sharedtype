@@ -3,7 +3,10 @@ package online.sharedtype.processor.domain.type;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+
 
 /**
  * Represents a generic type variable.
@@ -21,7 +24,8 @@ public final class TypeVariableInfo extends ReferableTypeInfo {
     private final String contextTypeQualifiedName; // TODO: reference to TypeDef to avoid string
     private final String name;
     private String qualifiedName;
-    // TODO: support generic bounds
+    @Builder.Default
+    private final List<TypeInfo> bounds = Collections.emptyList();
 
     public static String concatQualifiedName(String contextTypeQualifiedName, String name) {
         return contextTypeQualifiedName + "@" + name;
@@ -33,6 +37,10 @@ public final class TypeVariableInfo extends ReferableTypeInfo {
 
     public String name() {
         return name;
+    }
+
+    public List<TypeInfo> bounds() {
+        return bounds;
     }
 
     public String qualifiedName() {

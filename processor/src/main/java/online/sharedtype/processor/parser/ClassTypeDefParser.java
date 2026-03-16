@@ -97,9 +97,28 @@ final class ClassTypeDefParser implements TypeDefParser {
                 TypeVariableInfo.builder()
                     .contextTypeQualifiedName(typeElement.getQualifiedName().toString())
                     .name(typeParameterElement.getSimpleName().toString())
+                    .bounds(parseBounds(typeParameterElement, typeElement))
                     .build()
             )
-            .collect(Collectors.toList()); // TODO: type bounds
+            .collect(Collectors.toList());
+    }
+
+    private List<TypeInfo> parseBounds(TypeParameterElement typeParameterElement, TypeElement typeElement) {
+        return typeParameterElement.getBounds().stream()
+            .filter(b -> !"java.lang.Object".equals(b.toString()))
+            .filter(b -> {
+                Element e = ctx.getProcessingEnv().getTypeUtils().asElement(b);
+                if (e == null || ctx.isIgnored(e)) {
+                    return false;
+                }
+                if (e instanceof TypeElement) {
+                    TypeElement te = (TypeElement) e;
+                    return !ctx.isOptionalType(te.getQualifiedName().toString());
+                }
+                return true;
+            })
+            .map(b -> typeInfoParser.parse(b, typeElement))
+            .collect(Collectors.toList());
     }
 
     private List<TypeInfo> parseSupertypes(TypeElement typeElement) {
