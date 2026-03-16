@@ -85,7 +85,7 @@ final class GoStructConverterTest {
         assertThat(data).isNotNull();
         var model = (GoStructConverter.StructExpr) data.b();
         assertThat(model.name).isEqualTo("ClassA");
-        assertThat(model.typeParameters).containsExactly("T");
+        assertThat(model.typeParameters).containsExactly("T any");
         assertThat(model.typeParametersExpr()).isEqualTo("[T any]");
         assertThat(model.supertypes).containsExactly("SuperClassA[string]");
 
@@ -113,6 +113,33 @@ final class GoStructConverterTest {
         assertThat(prop5.name).isEqualTo("mapField");
         assertThat(prop5.capitalizedName()).isEqualTo("MapField");
         assertThat(prop5.type).isEqualTo("map[string]int32");
+    }
+
+    @Test
+    void convertTypeWithBounds() {
+        ClassDef classDef = ClassDef.builder()
+            .simpleName("ClassA")
+            .qualifiedName("com.github.cuzfrog.ClassA")
+            .typeVariables(List.of(
+                TypeVariableInfo.builder()
+                    .name("T")
+                    .bounds(List.of(
+                        ConcreteTypeInfo.builder()
+                            .qualifiedName("com.github.cuzfrog.Shape")
+                            .simpleName("Shape")
+                            .build()
+                    ))
+                    .build()
+            ))
+            .components(List.of())
+            .build();
+
+        var data = converter.convert(classDef);
+        var model = (GoStructConverter.StructExpr) data.b();
+
+        assertThat(model.name).isEqualTo("ClassA");
+        assertThat(model.typeParameters).containsExactly("T Shape");
+        assertThat(model.typeParametersExpr()).isEqualTo("[T Shape]");
     }
 
     @Test

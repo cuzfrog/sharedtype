@@ -38,7 +38,16 @@ final class TypescriptInterfaceConverter extends AbstractStructConverter {
         Config config = ctx.getTypeStore().getConfig(typeDef);
         InterfaceExpr value = new InterfaceExpr(
             classDef.simpleName(),
-            classDef.typeVariables().stream().map(typeInfo -> typeExpressionConverter.toTypeExpr(typeInfo, typeDef)).collect(Collectors.toList()),
+            classDef.typeVariables().stream().map(typeVar -> {
+                String name = typeVar.name();
+                if (typeVar.bounds().isEmpty()) {
+                    return name;
+                }
+                String bounds = typeVar.bounds().stream()
+                    .map(b -> typeExpressionConverter.toTypeExpr(b, typeDef))
+                    .collect(Collectors.joining(" & "));
+                return name + " extends " + bounds;
+            }).collect(Collectors.toList()),
             classDef.directSupertypes().stream().map(typeInfo1 -> typeExpressionConverter.toTypeExpr(typeInfo1, typeDef)).collect(Collectors.toList()),
             classDef.components().stream().map(field -> toPropertyExpr(field, typeDef, config)).collect(Collectors.toList())
         );

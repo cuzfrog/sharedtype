@@ -47,7 +47,16 @@ final class RustStructConverter extends AbstractStructConverter {
         ClassDef classDef = (ClassDef) typeDef;
         StructExpr value = new StructExpr(
             classDef.simpleName(),
-            classDef.typeVariables().stream().map(typeInfo -> typeExpressionConverter.toTypeExpr(typeInfo, typeDef)).collect(Collectors.toList()),
+            classDef.typeVariables().stream().map(typeVar -> {
+                String name = typeVar.name();
+                if (typeVar.bounds().isEmpty()) {
+                    return name;
+                }
+                String bounds = typeVar.bounds().stream()
+                    .map(b -> typeExpressionConverter.toTypeExpr(b, typeDef))
+                    .collect(Collectors.joining(" + "));
+                return name + ": " + bounds;
+            }).collect(Collectors.toList()),
             gatherProperties(classDef),
             rustMacroTraitsGenerator.generate(classDef)
         );

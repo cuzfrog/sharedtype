@@ -219,4 +219,30 @@ final class RustStructConverterTest {
         assertThat(prop4.optional).isFalse();
         assertThat(prop4.typeExpr()).isEqualTo("String");
     }
+
+    @Test
+    void convertTypeWithBounds() {
+        ClassDef classDef = ClassDef.builder()
+            .simpleName("ClassA")
+            .qualifiedName("com.github.cuzfrog.ClassA")
+            .typeVariables(List.of(
+                TypeVariableInfo.builder()
+                    .name("T")
+                    .bounds(List.of(
+                        ConcreteTypeInfo.builder()
+                            .qualifiedName("com.github.cuzfrog.Shape")
+                            .simpleName("Shape")
+                            .build()
+                    ))
+                    .build()
+            ))
+            .components(List.of())
+            .build();
+
+        var data = converter.convert(classDef);
+        var model = (RustStructConverter.StructExpr) data.b();
+
+        assertThat(model.name).isEqualTo("ClassA");
+        assertThat(model.typeParameters).containsExactly("T: Shape");
+    }
 }

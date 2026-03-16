@@ -156,4 +156,60 @@ final class ClassTypeDefParserTest {
         var classDef = parser.parse(typeElement).get(0);
         assertThat(classDef.components()).isEmpty();
     }
+
+    @Test
+    void parseTypeBounds() {
+        var boundTypeMock = ctxMocks.typeElement("com.example.Bound");
+        var boundType = boundTypeMock.type();
+        var typeParam = ctxMocks.typeParameter("T");
+        
+        java.util.List<javax.lang.model.type.TypeMirror> bounds = new java.util.ArrayList<>();
+        bounds.add(boundType);
+        org.mockito.Mockito.doReturn(bounds).when(typeParam.element()).getBounds();
+
+        var clazz = ctxMocks.typeElement("com.example.MyClass")
+             .withTypeParameters(typeParam.element())
+             .element();
+
+        var parsedBoundType = ConcreteTypeInfo.builder().qualifiedName("com.example.Bound").build();
+        when(typeInfoParser.parse(boundType, clazz)).thenReturn(parsedBoundType);
+        
+        var parsedSelfTypeInfo = ConcreteTypeInfo.builder().qualifiedName("com.example.MyClass").build();
+        when(typeInfoParser.parse(clazz.asType(), clazz)).thenReturn(parsedSelfTypeInfo);
+
+        var classDefs = parser.parse(clazz);
+        var classDef = (ClassDef)classDefs.get(0);
+        
+        assertThat(classDef.typeVariables()).hasSize(1);
+        var typeVar = classDef.typeVariables().get(0);
+        assertThat(typeVar.name()).isEqualTo("T");
+        assertThat(typeVar.bounds()).containsExactly(parsedBoundType);
+    }
+
+    @Test
+    void parseTypeBoundsWithObject() {
+        var objectTypeMock = ctxMocks.typeElement("java.lang.Object");
+        var objectType = objectTypeMock.type();
+        var typeParam = ctxMocks.typeParameter("T");
+        
+        java.util.List<javax.lang.model.type.TypeMirror> bounds = new java.util.ArrayList<>();
+        bounds.add(objectType);
+        org.mockito.Mockito.doReturn(bounds).when(typeParam.element()).getBounds();
+        when(objectType.toString()).thenReturn("java.lang.Object");
+
+        var clazz = ctxMocks.typeElement("com.example.MyClass")
+             .withTypeParameters(typeParam.element())
+             .element();
+        
+        var parsedSelfTypeInfo = ConcreteTypeInfo.builder().qualifiedName("com.example.MyClass").build();
+        when(typeInfoParser.parse(clazz.asType(), clazz)).thenReturn(parsedSelfTypeInfo);
+
+        var classDefs = parser.parse(clazz);
+        var classDef = (ClassDef)classDefs.get(0);
+        
+        assertThat(classDef.typeVariables()).hasSize(1);
+        var typeVar = classDef.typeVariables().get(0);
+        assertThat(typeVar.name()).isEqualTo("T");
+        assertThat(typeVar.bounds()).isEmpty();
+    }
 }
