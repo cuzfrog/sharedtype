@@ -108,7 +108,14 @@ final class ClassTypeDefParser implements TypeDefParser {
             .filter(b -> !"java.lang.Object".equals(b.toString()))
             .filter(b -> {
                 Element e = ctx.getProcessingEnv().getTypeUtils().asElement(b);
-                return e == null || !ctx.isIgnored(e);
+                if (e == null || ctx.isIgnored(e)) {
+                    return false;
+                }
+                if (e instanceof TypeElement) {
+                    TypeElement te = (TypeElement) e;
+                    return !ctx.isOptionalType(te.getQualifiedName().toString());
+                }
+                return true;
             })
             .map(b -> typeInfoParser.parse(b, typeElement))
             .collect(Collectors.toList());
